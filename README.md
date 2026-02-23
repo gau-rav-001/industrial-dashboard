@@ -1,7 +1,34 @@
 # 🏭 Industrial Equipment Monitoring Dashboard
-### Aligned with Atlas Copco SMARTLINK Architecture
 
-A full-stack industrial monitoring system built with React, Node.js/Express, and MongoDB — powered by the **AI4I Predictive Maintenance Dataset**.
+**A production-grade full-stack web application for real-time industrial machine monitoring and predictive maintenance — inspired by Atlas Copco SMARTLINK.**
+
+🔗 **Live Demo:** [industrial-dashboard-tau.vercel.app](https://industrial-dashboard-tau.vercel.app)
+
+---
+
+## ✨ Features
+
+- 📊 **Operations Dashboard** — Fleet-wide health summary with live stats, charts, and KPIs
+- 🏭 **Machine Registry** — Paginated table of 10,000+ machines with filtering and search
+- 🔍 **Machine Detail** — Deep-dive into individual machine sensor readings and history
+- ⚡ **Real-Time Prediction** — Enter sensor values and instantly get health score + failure diagnosis
+- 🚨 **Anomaly Detection** — Automatically detects 5 failure types (TWF, HDF, PWF, OSF, RNF)
+- 💊 **Health Scoring** — Proprietary 0–100 health score algorithm per machine
+- 📈 **Trend Visualization** — Chart.js powered health trends, tool wear distribution, status breakdown
+- 🔔 **Alert System** — Real-time alerts with severity levels (critical / warning)
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Chart.js 4, Axios |
+| Backend | Node.js, Express.js |
+| Database | MongoDB Atlas, Mongoose |
+| Deployment | Vercel (frontend), Render (backend) |
+| Dataset | AI4I Predictive Maintenance — Kaggle |
+| Fonts | Plus Jakarta Sans, DM Sans, JetBrains Mono |
 
 ---
 
@@ -10,92 +37,78 @@ A full-stack industrial monitoring system built with React, Node.js/Express, and
 ```
 Industrial Monitoring Dashboard
 │
-├── frontend/               ← React.js (Presentation Layer)
+├── frontend/                   ← React.js (Presentation Layer)
 │   └── src/
 │       ├── pages/
 │       │   ├── Dashboard.js        ← Overview + stats + charts
 │       │   ├── MachineList.js      ← Paginated machine table
-│       │   └── MachineDetail.js    ← Single machine deep-dive
+│       │   ├── MachineDetail.js    ← Single machine deep-dive
+│       │   └── RealtimePredict.js  ← Live prediction engine
 │       ├── components/
 │       │   ├── MachineTable.js     ← Reusable data table
 │       │   ├── ChartsPanel.js      ← Chart.js visualizations
 │       │   ├── HealthIndicator.js  ← SVG health ring
 │       │   └── AlertPanel.js       ← Alert list component
 │       ├── services/
-│       │   └── api.js              ← Axios API client
+│       │   └── api.js              ← Axios API client with retry logic
 │       └── App.js                  ← SPA router
 │
-├── backend/                ← Node.js + Express (Application Layer)
+├── backend/                    ← Node.js + Express (Application Layer)
 │   ├── controllers/
-│   │   └── machineController.js    ← Request handlers
+│   │   └── machineController.js    ← REST request handlers
 │   ├── models/
 │   │   └── Machine.js              ← Mongoose schema
 │   ├── routes/
-│   │   └── machineRoutes.js        ← REST route definitions
+│   │   └── machineRoutes.js        ← API route definitions
 │   ├── services/
 │   │   └── analyticsService.js     ← Health scoring + anomaly detection
 │   ├── scripts/
-│   │   └── importData.js           ← CSV → MongoDB importer
-│   ├── database.js                 ← MongoDB connection
-│   └── server.js                   ← Express entry point
+│   │   └── importData.js           ← CSV → MongoDB bulk importer
+│   ├── database.js                 ← MongoDB Atlas connection
+│   └── server.js                   ← Express entry point + CORS
 │
 ├── dataset/
-│   └── predictive_maintenance.csv  ← AI4I dataset (you add this)
+│   └── predictive_maintenance.csv  ← AI4I dataset (download from Kaggle)
 │
 └── README.md
 ```
 
 ---
 
-## 🚀 Setup Instructions
+## 🚀 Local Setup
 
 ### Prerequisites
-- Node.js v18+
-- MongoDB (local or Atlas)
-- npm or yarn
+- Node.js v20+
+- MongoDB Atlas account (free tier)
+- npm
 
----
+### Step 1 — Clone the repo
+```bash
+git clone https://github.com/YOUR_USERNAME/industrial-dashboard.git
+cd industrial-dashboard
+```
 
-### Step 1 — Get the Dataset
+### Step 2 — Get the Dataset
+1. Download from: https://www.kaggle.com/datasets/shivamb/machine-predictive-maintenance-classification
+2. Place `predictive_maintenance.csv` in the `dataset/` folder
 
-1. Go to: https://www.kaggle.com/datasets/shivamb/machine-predictive-maintenance-classification
-2. Download `predictive_maintenance.csv`
-3. Place it in the `dataset/` folder at the project root
-
----
-
-### Step 2 — Backend Setup
-
+### Step 3 — Backend Setup
 ```bash
 cd backend
 npm install
-
-# Create your environment file
 cp .env.example .env
-# Edit .env → set MONGO_URI to your MongoDB connection string
+# Edit .env → paste your MongoDB Atlas connection string as MONGO_URI
 
-# Import the dataset into MongoDB
-npm run import-data
-
-# Start the API server
-npm run dev
+npm run import-data   # Import 10,000 records into MongoDB
+npm run dev           # Start API server on :5000
 ```
 
-The backend will run at **http://localhost:5000**
-
----
-
-### Step 3 — Frontend Setup
-
+### Step 4 — Frontend Setup
 ```bash
 cd frontend
 npm install
-
-# Start the React dev server
-npm start
+npm start             # Opens at http://localhost:3000
 ```
-
-The dashboard will open at **http://localhost:3000**
 
 ---
 
@@ -104,39 +117,63 @@ The dashboard will open at **http://localhost:3000**
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/machines` | All machines (paginated, filterable) |
-| GET | `/api/machines/:id` | Single machine + analytics |
+| GET | `/api/machines/:id` | Single machine + full analytics |
 | GET | `/api/machines/status/summary` | Fleet health summary |
 | GET | `/api/machines/analytics/trends` | Trend data for charts |
+| POST | `/api/machines/predict` | Real-time failure prediction |
 | GET | `/api/health` | API health check |
 
-### Query Parameters for `GET /api/machines`
-| Param | Values | Description |
-|-------|--------|-------------|
-| `status` | `operational`, `failed` | Filter by failure status |
-| `type` | `L`, `M`, `H` | Filter by machine type |
-| `limit` | number | Records per page (default: 100) |
-| `page` | number | Page number |
-| `sort` | field name | Sort field (prefix `-` for desc) |
+### Predict Endpoint — POST `/api/machines/predict`
+
+**Request Body:**
+```json
+{
+  "machineType": "M",
+  "airTemperature": 300.5,
+  "processTemperature": 310.2,
+  "rotationalSpeed": 1500,
+  "torque": 40.0,
+  "toolWear": 120
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "prediction": {
+    "healthScore": 74,
+    "status": "WARNING",
+    "failureStatus": false,
+    "predictedFailure": "No Failure Predicted",
+    "alerts": [],
+    "power": 6283,
+    "rulEstimate": "~133 min of tool life remaining",
+    "tempDifferential": "9.70"
+  }
+}
+```
 
 ---
 
-## 📊 Analytics Features
+## 📊 Analytics Engine
 
-### Health Score Calculation
-Each machine gets a score (0–100) based on:
-- **Tool wear** (40% weight) — primary degradation indicator
-- **Temperature differential** — process vs air temp
-- **Rotational speed deviation** from normal range
-- **Torque deviation** from mean
-- **Out-of-range penalties** for critical values
+### Health Score Algorithm (0–100)
+Each machine is scored based on:
+- **Tool Wear** (40% weight) — primary degradation indicator
+- **Temperature Differential** — process vs air (optimal: ~10K)
+- **Rotational Speed Deviation** from normal operating range
+- **Torque Deviation** from mean
+- **Out-of-range Penalties** for critical threshold breaches
 
-### Anomaly Detection
-The system detects 5 failure types from the AI4I dataset:
-- **TWF** — Tool Wear Failure (wear > 200 min)
-- **HDF** — Heat Dissipation Failure (temp + speed combo)
-- **PWF** — Power Failure (torque × speed out of range)
-- **OSF** — Overstrain Failure (high torque + worn tool)
-- **RNF** — Random Failure
+### Anomaly Detection — 5 Failure Types
+| Code | Name | Trigger |
+|------|------|---------|
+| TWF | Tool Wear Failure | Tool wear > 200 min |
+| HDF | Heat Dissipation Failure | Low temp delta + low speed |
+| PWF | Power Failure | Power output out of 3500–9000W range |
+| OSF | Overstrain Failure | Tool wear × torque > 11,000 |
+| RNF | Random Failure | Stochastic failure |
 
 ---
 
@@ -144,35 +181,55 @@ The system detects 5 failure types from the AI4I dataset:
 
 ```js
 {
-  machineId: String,          // e.g. "M14861"
-  machineType: "L" | "M" | "H",
-  airTemperature: Number,     // Kelvin
-  processTemperature: Number, // Kelvin
-  rotationalSpeed: Number,    // RPM
-  torque: Number,             // Nm
-  toolWear: Number,           // minutes
+  machineId: String,            // e.g. "M14861"
+  machineType: "L" | "M" | "H", // Low / Medium / High quality
+  airTemperature: Number,       // Kelvin
+  processTemperature: Number,   // Kelvin
+  rotationalSpeed: Number,      // RPM
+  torque: Number,               // Nm
+  toolWear: Number,             // minutes
   failureStatus: Boolean,
-  failureType: String,        // "No Failure" | "Tool Wear Failure" | ...
-  healthScore: Number,        // 0–100
+  failureType: String,          // "No Failure" | "Tool Wear Failure" | ...
+  healthScore: Number,          // 0–100 (calculated)
   timestamp: Date
 }
 ```
 
 ---
 
-## 🎨 Tech Stack
+## 🌐 Deployment
 
-| Layer | Technology |
-|-------|-----------|
-| UI | React 18, Chart.js 4, react-chartjs-2 |
-| Fonts | Rajdhani, Share Tech Mono, Exo 2 |
-| API | Node.js, Express.js |
-| DB | MongoDB, Mongoose |
-| Dataset | AI4I Predictive Maintenance (Kaggle) |
+| Service | Platform | URL |
+|---------|----------|-----|
+| Frontend | Vercel | [industrial-dashboard-tau.vercel.app](https://industrial-dashboard-tau.vercel.app) |
+| Backend | Render | [industrial-dashboard-api.onrender.com](https://industrial-dashboard-api.onrender.com) |
+| Database | MongoDB Atlas | Cloud hosted |
+
+### Environment Variables
+
+**Backend (Render):**
+```
+MONGO_URI=mongodb+srv://...
+PORT=5000
+NODE_ENV=production
+FRONTEND_URL=https://industrial-dashboard-tau.vercel.app
+```
+
+**Frontend (Vercel):**
+```
+REACT_APP_API_URL=https://industrial-dashboard-api.onrender.com/api
+```
 
 ---
 
-## 📁 Dataset Note
+## 👨‍💻 Developer
 
-The `dataset/` folder must contain `predictive_maintenance.csv` downloaded from Kaggle.
-The import script handles both naming conventions found in the dataset.
+**Gaurav Kumbhare**
+
+Built as a full-stack systems project aligned with real-world industrial IoT monitoring platforms like Atlas Copco SMARTLINK.
+
+---
+
+## 📄 Dataset Credit
+
+[AI4I 2020 Predictive Maintenance Dataset](https://www.kaggle.com/datasets/shivamb/machine-predictive-maintenance-classification) — UCI Machine Learning Repository
