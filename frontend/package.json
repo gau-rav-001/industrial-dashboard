@@ -16,16 +16,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-<<<<<<< HEAD
-    "build": "CI=false react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "proxy": "http://localhost:5000"
-}
-=======
     "prebuild": "chmod +x node_modules/.bin/react-scripts",
-    "build": "npx react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -38,4 +30,3 @@
     "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   }
 }
->>>>>>> 8a301fa4d669c6cf8aaf737d3cf2ab7cb0d8ff2b
