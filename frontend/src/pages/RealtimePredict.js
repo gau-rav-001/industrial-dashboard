@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import HealthIndicator, { HealthBadge } from '../components/HealthIndicator';
 import AlertPanel from '../components/AlertPanel';
 
+const API_BASE = process.env.REACT_APP_API_URL || '/api';
+
 const DEFAULT_VALUES = { machineType: 'M', airTemperature: '300.0', processTemperature: '310.5', rotationalSpeed: '1500', torque: '40.0', toolWear: '100' };
 
 const FIELD_META = {
@@ -23,16 +25,41 @@ const RealtimePredict = ({ onNavigate }) => {
   const handlePredict = async () => {
     setLoading(true); setError(null); setResult(null);
     try {
-      const res = await fetch('/api/machines/predict', {
+      const payload = {
+        machineType: form.machineType,
+        airTemperature: parseFloat(form.airTemperature),
+        processTemperature: parseFloat(form.processTemperature),
+        rotationalSpeed: parseFloat(form.rotationalSpeed),
+        torque: parseFloat(form.torque),
+        toolWear: parseFloat(form.toolWear),
+      };
+
+      const response = await fetch(`${API_BASE}/machines/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, airTemperature: parseFloat(form.airTemperature), processTemperature: parseFloat(form.processTemperature), rotationalSpeed: parseFloat(form.rotationalSpeed), torque: parseFloat(form.torque), toolWear: parseFloat(form.toolWear) }),
+        body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
+
+      const text = await response.text(); // read as text first
+
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from server — backend may be sleeping, try again in 30 seconds');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Invalid response: ${text.substring(0, 100)}`);
+      }
+
+      if (!data.success) throw new Error(data.error || 'Prediction failed');
       setResult(data.prediction);
-    } catch (err) { setError(err.message); }
-    finally { setLoading(false); }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const scoreColor = result
@@ -47,7 +74,6 @@ const RealtimePredict = ({ onNavigate }) => {
 
   return (
     <div>
-      {/* Header */}
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button className="btn btn-back" onClick={() => onNavigate('dashboard')}>← Dashboard</button>
@@ -120,7 +146,7 @@ const RealtimePredict = ({ onNavigate }) => {
               Reset
             </button>
           </div>
-          {error && <div className="error-box" style={{ marginTop: '1rem' }}>{error}</div>}
+          {error && <div className="error-box" style={{ marginTop: '1rem' }}>⚠ {error}</div>}
         </div>
 
         {/* RESULTS */}
@@ -142,18 +168,16 @@ const RealtimePredict = ({ onNavigate }) => {
 
           {result && (
             <div className="animate-in">
-              {/* Score Card */}
               <div className="card" style={{ marginBottom: '1.1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div className="section-title" style={{ margin: 0 }}>Prediction Result</div>
                   <HealthBadge status={result.status} />
                 </div>
-
                 <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '1rem' }}>
                   <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <HealthIndicator score={result.healthScore} size="lg" />
                     <div style={{ position: 'absolute', textAlign: 'center' }}>
-                      <div className="health-score-big" style={{ color: scoreColor }}>{result.healthScore}</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '2.8rem', fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{result.healthScore}</div>
                       <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', fontFamily: 'var(--font-display)', letterSpacing: '0.5px' }}>Health</div>
                     </div>
                   </div>
@@ -170,27 +194,19 @@ const RealtimePredict = ({ onNavigate }) => {
                     ))}
                   </div>
                 </div>
-
-                {/* Diagnosis */}
                 <div className={`diagnosis-box ${result.failureStatus ? 'fail' : 'ok'}`}>
                   <div className={`diagnosis-label ${result.failureStatus ? 'fail' : 'ok'}`}>Diagnosis</div>
                   <div className={`diagnosis-value ${result.failureStatus ? 'fail' : 'ok'}`}>{result.predictedFailure}</div>
                 </div>
-
-                {/* RUL */}
                 <div className="rul-box">
                   <div className="rul-label">Remaining Useful Life Estimate</div>
                   <div className="rul-value">{result.rulEstimate}</div>
                 </div>
               </div>
-
-              {/* Alerts */}
               <div className="card" style={{ marginBottom: '1.1rem' }}>
                 <div className="section-title">Detected Anomalies ({result.alerts.length})</div>
                 <AlertPanel alerts={result.alerts} />
               </div>
-
-              {/* Recommendation */}
               <div className="card">
                 <div className="section-title">Maintenance Recommendation</div>
                 <div className="reco-box">{recoText}</div>
